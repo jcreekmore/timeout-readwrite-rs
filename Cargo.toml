@@ -1,0 +1,26 @@
+[package]
+authors = ["Jonathan Creekmore <jonathan@thecreekmores.org>"]
+categories = ["os::unix-apis"]
+changelog = "CHANGELOG.md"
+description = "Adds timeout capabilities to Readers and Writers"
+documentation = "https://docs.rs/timeout-readwrite/"
+homepage = "https://github.com/jcreekmore/timeout-readwrite-rs"
+keywords = [
+    "timeout",
+    "reader",
+    "writer",
+]
+license = "MIT/Apache-2.0"
+name = "timeout-readwrite"
+readme = "README.md"
+repository = "https://github.com/jcreekmore/timeout-readwrite-rs"
+version = "0.1.0"
+
+[badges.travis-ci]
+repository = "jcreekmore/timeout-readwrite-rs"
+
+[dependencies]
+nix = "0.9.0"
+
+[dev-dependencies]
+lazy_static = "0.2.8"

@@ -1,0 +1,11 @@
+sudo: false
+language: rust
+cache: cargo
+rust:
+  - nightly
+  - beta
+  - stable
+  - 1.15.1 # currently oldest supported version
+script:
+  - cargo build --verbose
+  - cargo test --verbose
