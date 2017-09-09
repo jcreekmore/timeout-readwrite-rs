@@ -8,8 +8,13 @@
 
 #![cfg(unix)]
 
-//! Provides TimeoutReader and TimeoutWriter structs to time out reads and
-//! writes, respectively.
+//! Provides `TimeoutReader` and `TimeoutWriter` structs to time out reads and
+//! writes, respectively. `TimeoutReader` implements `Read` and `TimeoutWriter`
+//! implements `Write`. If any operation times out, the method called will return
+//! an `io::ErrorKind::TimedOut` variant as the value of `io::Error`. All other
+//! error values that would normally be produced by the underlying implementation
+//! of the `Read` or `Write` trait could also be produced by the `TimeoutReader` and
+//! `TimeoutWriter` structs.
 //!
 //! # Example: read from a process with a 5-second timeout
 //!
@@ -18,12 +23,12 @@
 //! out.
 //!
 //! ```rust
-//! use std::io::{Read, Result};
+//! use std::io::{ErrorKind, Read, Result};
 //! use std::process;
 //! use std::time::Duration;
 //! use timeout_readwrite::TimeoutReader;
 //!
-//! fn read_command(mut cmd: process::Command) -> Result<usize> {
+//! fn read_command(mut cmd: process::Command) -> Result<String> {
 //!     let child = cmd.stdout(process::Stdio::piped())
 //!        .stderr(process::Stdio::null())
 //!        .spawn()
@@ -32,7 +37,14 @@
 //!
 //!     let mut data = String::new();
 //!     let mut rdr = TimeoutReader::new(stdout, Duration::new(5, 0));
-//!     rdr.read_to_string(&mut data)
+//!     rdr.read_to_string(&mut data)?;
+//!     Ok(data)
+//! }
+//!
+//! match read_command(process::Command::new("ls")) {
+//!   Ok(value) => { print!("{}", value); },
+//!   Err(ref e) if e.kind() == ErrorKind::TimedOut => { println!("timed out!"); },
+//!   Err(ref e) => { println!("failed reading with {}", e); },
 //! }
 //! ```
 
@@ -84,6 +96,11 @@ fn wait_until_ready<R: AsRawFd>(timeout: &Option<c_int>,
 /// The `read` call on a `Read` instance will block forever until data is available.
 /// A `TimeoutReader` will wait until data is available, up until an optional timeout,
 /// before actually performing the `read` operation.
+///
+/// If any `Read` operation times out, the method called will return
+/// an `io::ErrorKind::TimedOut` variant as the value of `io::Error`. All other
+/// error values that would normally be produced by the underlying implementation
+/// of the `Read` trait could also be produced by the `TimeoutReader`.
 pub struct TimeoutReader<H>
     where H: Read + AsRawFd
 {
@@ -155,6 +172,11 @@ impl<H> TimeoutReader<H>
 /// The `write` call on a `Write` instance can block forever until data cannot be written.
 /// A `TimeoutWriter` will wait until data can be written, up until an optional timeout,
 /// before actually performing the `write` operation on the underlying writer.
+///
+/// If any `Write` operation times out, the method called will return
+/// an `io::ErrorKind::TimedOut` variant as the value of `io::Error`. All other
+/// error values that would normally be produced by the underlying implementation
+/// of the `Write` trait could also be produced by the `TimeoutWriter`.
 pub struct TimeoutWriter<H>
     where H: Write + AsRawFd
 {
