@@ -6,7 +6,7 @@ use std::io::Result;
 use std::process;
 use std::time::Duration;
 
-use timeout_readwrite::TimeoutReader;
+use timeout_readwrite::TimeoutReadExt;
 
 fn each_line<R: BufRead>(rdr: R) -> Result<()> {
     let lines = rdr.lines();
@@ -31,7 +31,7 @@ fn do_command<I: Iterator<Item = String>>(mut args: I) -> Result<()> {
         .expect("spawning did not succeed");
 
     let stdout = child.stdout.expect("stdout must be there");
-    each_line(BufReader::new(TimeoutReader::new(stdout, Duration::new(5, 0))))
+    each_line(BufReader::new(stdout.with_timeout(Duration::new(5, 0))))
 }
 
 fn main() {

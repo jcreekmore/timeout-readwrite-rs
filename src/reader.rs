@@ -91,6 +91,20 @@ impl<H> TimeoutReader<H>
     }
 }
 
+pub trait TimeoutReadExt<H>
+    where H: Read + AsRawFd
+{
+    fn with_timeout<T: Into<Option<Duration>>>(self, timeout: T) -> TimeoutReader<H>;
+}
+
+impl<H> TimeoutReadExt<H> for H
+    where H: Read + AsRawFd
+{
+    fn with_timeout<T: Into<Option<Duration>>>(self, timeout: T) -> TimeoutReader<H> {
+        TimeoutReader::new(self, timeout)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::env;
@@ -139,6 +153,23 @@ mod tests {
 
         let fp = File::open(regular_file).unwrap();
         let mut fp = TimeoutReader::new(fp, None);
+
+        let mut read_contents = String::new();
+        fp.read_to_string(&mut read_contents).unwrap();
+
+        assert_eq!(original_contents, read_contents);
+    }
+
+    #[test]
+    fn read_regular_file_with_timeout_extension_trait() {
+        let original_contents = include_str!("../test_data/regular_file.txt");
+
+        let mut regular_file = CRATE_ROOT.clone();
+        regular_file.push("test_data");
+        regular_file.push("regular_file.txt");
+
+        let fp = File::open(regular_file).unwrap();
+        let mut fp = fp.with_timeout(Duration::new(5, 0));
 
         let mut read_contents = String::new();
         fp.read_to_string(&mut read_contents).unwrap();

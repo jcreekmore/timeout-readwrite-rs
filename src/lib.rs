@@ -47,6 +47,35 @@
 //!   Err(ref e) => { println!("failed reading with {}", e); },
 //! }
 //! ```
+//!
+//! # Example: use the TimeoutReadExt trait
+//!
+//! Use the TimeoutReadExt trait to provide a simple helper method to creating a TimeoutReader.
+//!
+//! ```rust
+//! use std::io::{ErrorKind, Read, Result};
+//! use std::process;
+//! use std::time::Duration;
+//! use timeout_readwrite::TimeoutReadExt;
+//!
+//! fn read_command(mut cmd: process::Command) -> Result<String> {
+//!     let child = cmd.stdout(process::Stdio::piped())
+//!        .stderr(process::Stdio::null())
+//!        .spawn()
+//!        .expect("spawing did not succeed");
+//!     let stdout = child.stdout.expect("stdout must be there");
+//!
+//!     let mut data = String::new();
+//!     stdout.with_timeout(Duration::new(5, 0)).read_to_string(&mut data)?;
+//!     Ok(data)
+//! }
+//!
+//! match read_command(process::Command::new("ls")) {
+//!   Ok(value) => { print!("{}", value); },
+//!   Err(ref e) if e.kind() == ErrorKind::TimedOut => { println!("timed out!"); },
+//!   Err(ref e) => { println!("failed reading with {}", e); },
+//! }
+//! ```
 
 #[cfg(test)]
 #[macro_use]
@@ -56,7 +85,7 @@ extern crate nix;
 mod utils;
 
 pub mod reader;
-pub use reader::TimeoutReader;
+pub use reader::{TimeoutReader, TimeoutReadExt};
 
 pub mod writer;
-pub use writer::TimeoutWriter;
+pub use writer::{TimeoutWriter, TimeoutWriteExt};

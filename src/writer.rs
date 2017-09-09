@@ -95,3 +95,17 @@ impl<H> TimeoutWriter<H>
         }
     }
 }
+
+pub trait TimeoutWriteExt<H>
+    where H: Write + AsRawFd
+{
+    fn with_timeout<T: Into<Option<Duration>>>(self, timeout: T) -> TimeoutWriter<H>;
+}
+
+impl<H> TimeoutWriteExt<H> for H
+    where H: Write + AsRawFd
+{
+    fn with_timeout<T: Into<Option<Duration>>>(self, timeout: T) -> TimeoutWriter<H> {
+        TimeoutWriter::new(self, timeout)
+    }
+}
