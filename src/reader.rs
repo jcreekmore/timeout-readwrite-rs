@@ -6,14 +6,12 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use nix::libc::c_int;
-use nix::poll;
+use mio::{Evented, Events, Poll, PollOpt, Ready, Token};
+use mio::unix::EventedFd;
 use std::io::Result;
 use std::io::Read;
-use std::os::unix::io::AsRawFd;
+use std::os::unix::io::{AsRawFd, RawFd};
 use std::time::Duration;
-
-use super::utils;
 
 /// The `TimeoutReader` struct adds read timeouts to any reader.
 ///
@@ -26,31 +24,25 @@ use super::utils;
 /// error values that would normally be produced by the underlying implementation
 /// of the `Read` trait could also be produced by the `TimeoutReader`.
 pub struct TimeoutReader<H>
-    where H: Read + AsRawFd
+    where H: Read + Evented
 {
-    timeout: Option<c_int>,
+    timeout: Option<Duration>,
+    poll: Poll,
+    events: Events,
     handle: H,
 }
 
 impl<H> Read for TimeoutReader<H>
-    where H: Read + AsRawFd
+    where H: Read + Evented
 {
     fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
-        utils::wait_until_ready(&self.timeout, &self.handle, poll::POLLIN)?;
+        self.poll.poll(&mut self.events, self.timeout)?;
         self.handle.read(buf)
     }
 }
 
-impl<H> Clone for TimeoutReader<H>
-    where H: Read + AsRawFd + Clone
-{
-    fn clone(&self) -> TimeoutReader<H> {
-        TimeoutReader { handle: self.handle.clone(), ..*self }
-    }
-}
-
 impl<H> TimeoutReader<H>
-    where H: Read + AsRawFd
+    where H: Read + Evented
 {
     /// Create a new `TimeoutReader` with an optional timeout.
     ///
@@ -83,25 +75,54 @@ impl<H> TimeoutReader<H>
     /// # Ok(())
     /// # }
     /// ```
-    pub fn new<T: Into<Option<Duration>>>(handle: H, timeout: T) -> TimeoutReader<H> {
-        TimeoutReader {
-            timeout: timeout.into().map(utils::duration_to_ms),
+    pub fn new<T: Into<Option<Duration>>>(handle: H, timeout: T) -> Result<TimeoutReader<H>> {
+        let poll = Poll::new()?;
+        poll.register(&handle, Token(0), Ready::readable(), PollOpt::level())?;
+
+        Ok(TimeoutReader {
+            timeout: timeout.into(),
+            poll: poll,
+            events: Events::with_capacity(1),
             handle: handle,
-        }
+        })
     }
 }
 
 pub trait TimeoutReadExt<H>
-    where H: Read + AsRawFd
+    where H: Read + Evented
 {
-    fn with_timeout<T: Into<Option<Duration>>>(self, timeout: T) -> TimeoutReader<H>;
+    fn with_timeout<T: Into<Option<Duration>>>(self, timeout: T) -> Result<TimeoutReader<H>>;
 }
 
 impl<H> TimeoutReadExt<H> for H
-    where H: Read + AsRawFd
+    where H: Read + Evented
 {
-    fn with_timeout<T: Into<Option<Duration>>>(self, timeout: T) -> TimeoutReader<H> {
+    fn with_timeout<T: Into<Option<Duration>>>(self, timeout: T) -> Result<TimeoutReader<H>> {
         TimeoutReader::new(self, timeout)
+    }
+}
+
+struct RawFdWrapper<R>
+    where R: Read + AsRawFd
+{
+    handle: R,
+    fd: RawFd,
+    evented: Option<EventedFd<'static>>,
+}
+
+impl<R> From<R> for RawFdWrapper<R>
+    where R: Read + AsRawFd
+{
+    fn from(rdr: R) -> RawFdWrapper<R> {
+        let fd = rdr.as_raw_fd();
+        let mut value = RawFdWrapper {
+            handle: rdr,
+            fd: fd,
+            evented: None,
+        };
+
+        value.evented = Some(EventedFd(&value.fd));
+        value
     }
 }
 

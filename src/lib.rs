@@ -80,6 +80,7 @@
 #[cfg(test)]
 #[macro_use]
 extern crate lazy_static;
+extern crate mio;
 extern crate nix;
 
 mod utils;
