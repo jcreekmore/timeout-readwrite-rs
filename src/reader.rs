@@ -41,6 +41,14 @@ impl<H> Read for TimeoutReader<H>
     }
 }
 
+impl<H> AsRawFd for TimeoutReader<H>
+    where H: Read + AsRawFd
+{
+    fn as_raw_fd(&self) -> c_int {
+        self.handle.as_raw_fd()
+    }
+}
+
 impl<H> Clone for TimeoutReader<H>
     where H: Read + AsRawFd + Clone
 {
@@ -135,12 +143,15 @@ mod tests {
         regular_file.push("regular_file.txt");
 
         let fp = File::open(regular_file).unwrap();
+        let fp_fd = fp.as_raw_fd();
         let mut fp = TimeoutReader::new(fp, Duration::new(5, 0));
 
         let mut read_contents = String::new();
         fp.read_to_string(&mut read_contents).unwrap();
 
         assert_eq!(original_contents, read_contents);
+
+        assert_eq!(fp_fd, fp.as_raw_fd());
     }
 
     #[test]

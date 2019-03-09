@@ -46,6 +46,14 @@ impl<H> Write for TimeoutWriter<H>
     }
 }
 
+impl<H> AsRawFd for TimeoutWriter<H>
+    where H: Write + AsRawFd
+{
+    fn as_raw_fd(&self) -> c_int {
+        self.handle.as_raw_fd()
+    }
+}
+
 impl<H> Clone for TimeoutWriter<H>
     where H: Write + AsRawFd + Clone
 {
