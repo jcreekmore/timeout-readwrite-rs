@@ -27,11 +27,11 @@ pub fn duration_to_ms(duration: Duration) -> c_int {
 /// Wait until `to_fd` receives the poll event from `events`, up to `timeout` length
 /// of time.
 pub fn wait_until_ready<R: AsRawFd>(
-    timeout: &Option<c_int>,
+    timeout: Option<c_int>,
     to_fd: &R,
     events: poll::EventFlags,
 ) -> Result<()> {
-    if let Some(timeout) = *timeout {
+    if let Some(timeout) = timeout {
         let mut pfd = poll::PollFd::new(to_fd.as_raw_fd(), events);
         let mut s = unsafe { slice::from_raw_parts_mut(&mut pfd, 1) };
 

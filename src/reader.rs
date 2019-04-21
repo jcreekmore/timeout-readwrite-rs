@@ -38,7 +38,7 @@ where
     H: Read + AsRawFd,
 {
     fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
-        utils::wait_until_ready(&self.timeout, &self.handle, poll::POLLIN)?;
+        utils::wait_until_ready(self.timeout, &self.handle, poll::POLLIN)?;
         self.handle.read(buf)
     }
 }

@@ -38,12 +38,12 @@ where
     H: Write + AsRawFd,
 {
     fn write(&mut self, buf: &[u8]) -> Result<usize> {
-        utils::wait_until_ready(&self.timeout, &self.handle, poll::POLLOUT)?;
+        utils::wait_until_ready(self.timeout, &self.handle, poll::POLLOUT)?;
         self.handle.write(buf)
     }
 
     fn flush(&mut self) -> Result<()> {
-        utils::wait_until_ready(&self.timeout, &self.handle, poll::POLLOUT)?;
+        utils::wait_until_ready(self.timeout, &self.handle, poll::POLLOUT)?;
         self.handle.flush()
     }
 }
