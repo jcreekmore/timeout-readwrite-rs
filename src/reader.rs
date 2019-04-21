@@ -7,7 +7,7 @@
 // except according to those terms.
 
 use nix::libc::c_int;
-use nix::poll;
+use nix::poll::EventFlags;
 use std::io::Read;
 use std::io::Result;
 use std::io::Seek;
@@ -40,7 +40,7 @@ where
     H: Read + AsRawFd,
 {
     fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
-        utils::wait_until_ready(self.timeout, &self.handle, poll::POLLIN)?;
+        utils::wait_until_ready(self.timeout, &self.handle, EventFlags::POLLIN)?;
         self.handle.read(buf)
     }
 }
