@@ -10,6 +10,8 @@ use nix::libc::c_int;
 use nix::poll;
 use std::io::Read;
 use std::io::Result;
+use std::io::Seek;
+use std::io::SeekFrom;
 use std::os::unix::io::AsRawFd;
 use std::time::Duration;
 
@@ -40,6 +42,15 @@ where
     fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
         utils::wait_until_ready(self.timeout, &self.handle, poll::POLLIN)?;
         self.handle.read(buf)
+    }
+}
+
+impl<H> Seek for TimeoutReader<H>
+where
+    H: Read + AsRawFd + Seek,
+{
+    fn seek(&mut self, pos: SeekFrom) -> Result<u64> {
+        self.handle.seek(pos)
     }
 }
 
