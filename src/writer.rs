@@ -9,6 +9,8 @@
 use nix::libc::c_int;
 use nix::poll;
 use std::io::Result;
+use std::io::Seek;
+use std::io::SeekFrom;
 use std::io::Write;
 use std::os::unix::io::AsRawFd;
 use std::time::Duration;
@@ -45,6 +47,15 @@ where
     fn flush(&mut self) -> Result<()> {
         utils::wait_until_ready(self.timeout, &self.handle, poll::POLLOUT)?;
         self.handle.flush()
+    }
+}
+
+impl<H> Seek for TimeoutWriter<H>
+where
+    H: Write + AsRawFd + Seek,
+{
+    fn seek(&mut self, pos: SeekFrom) -> Result<u64> {
+        self.handle.seek(pos)
     }
 }
 
