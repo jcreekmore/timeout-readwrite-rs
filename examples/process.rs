@@ -1,8 +1,8 @@
 extern crate timeout_readwrite;
 
 use std::env;
-use std::io::{BufRead, BufReader};
 use std::io::Result;
+use std::io::{BufRead, BufReader};
 use std::process;
 use std::time::Duration;
 
@@ -25,7 +25,8 @@ fn do_command<I: Iterator<Item = String>>(mut args: I) -> Result<()> {
         cmd.arg(arg);
     }
 
-    let child = cmd.stdout(process::Stdio::piped())
+    let child = cmd
+        .stdout(process::Stdio::piped())
         .stderr(process::Stdio::null())
         .spawn()
         .expect("spawning did not succeed");

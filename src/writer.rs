@@ -26,14 +26,16 @@ use super::utils;
 /// error values that would normally be produced by the underlying implementation
 /// of the `Write` trait could also be produced by the `TimeoutWriter`.
 pub struct TimeoutWriter<H>
-    where H: Write + AsRawFd
+where
+    H: Write + AsRawFd,
 {
     timeout: Option<c_int>,
     handle: H,
 }
 
 impl<H> Write for TimeoutWriter<H>
-    where H: Write + AsRawFd
+where
+    H: Write + AsRawFd,
 {
     fn write(&mut self, buf: &[u8]) -> Result<usize> {
         utils::wait_until_ready(&self.timeout, &self.handle, poll::POLLOUT)?;
@@ -47,7 +49,8 @@ impl<H> Write for TimeoutWriter<H>
 }
 
 impl<H> AsRawFd for TimeoutWriter<H>
-    where H: Write + AsRawFd
+where
+    H: Write + AsRawFd,
 {
     fn as_raw_fd(&self) -> c_int {
         self.handle.as_raw_fd()
@@ -55,15 +58,20 @@ impl<H> AsRawFd for TimeoutWriter<H>
 }
 
 impl<H> Clone for TimeoutWriter<H>
-    where H: Write + AsRawFd + Clone
+where
+    H: Write + AsRawFd + Clone,
 {
     fn clone(&self) -> TimeoutWriter<H> {
-        TimeoutWriter { handle: self.handle.clone(), ..*self }
+        TimeoutWriter {
+            handle: self.handle.clone(),
+            ..*self
+        }
     }
 }
 
 impl<H> TimeoutWriter<H>
-    where H: Write + AsRawFd
+where
+    H: Write + AsRawFd,
 {
     /// Create a new `TimeoutWriter` with an optional timeout.
     ///
@@ -105,13 +113,15 @@ impl<H> TimeoutWriter<H>
 }
 
 pub trait TimeoutWriteExt<H>
-    where H: Write + AsRawFd
+where
+    H: Write + AsRawFd,
 {
     fn with_timeout<T: Into<Option<Duration>>>(self, timeout: T) -> TimeoutWriter<H>;
 }
 
 impl<H> TimeoutWriteExt<H> for H
-    where H: Write + AsRawFd
+where
+    H: Write + AsRawFd,
 {
     fn with_timeout<T: Into<Option<Duration>>>(self, timeout: T) -> TimeoutWriter<H> {
         TimeoutWriter::new(self, timeout)

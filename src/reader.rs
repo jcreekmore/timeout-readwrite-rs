@@ -8,8 +8,8 @@
 
 use nix::libc::c_int;
 use nix::poll;
-use std::io::Result;
 use std::io::Read;
+use std::io::Result;
 use std::os::unix::io::AsRawFd;
 use std::time::Duration;
 
@@ -26,14 +26,16 @@ use super::utils;
 /// error values that would normally be produced by the underlying implementation
 /// of the `Read` trait could also be produced by the `TimeoutReader`.
 pub struct TimeoutReader<H>
-    where H: Read + AsRawFd
+where
+    H: Read + AsRawFd,
 {
     timeout: Option<c_int>,
     handle: H,
 }
 
 impl<H> Read for TimeoutReader<H>
-    where H: Read + AsRawFd
+where
+    H: Read + AsRawFd,
 {
     fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
         utils::wait_until_ready(&self.timeout, &self.handle, poll::POLLIN)?;
@@ -42,7 +44,8 @@ impl<H> Read for TimeoutReader<H>
 }
 
 impl<H> AsRawFd for TimeoutReader<H>
-    where H: Read + AsRawFd
+where
+    H: Read + AsRawFd,
 {
     fn as_raw_fd(&self) -> c_int {
         self.handle.as_raw_fd()
@@ -50,15 +53,20 @@ impl<H> AsRawFd for TimeoutReader<H>
 }
 
 impl<H> Clone for TimeoutReader<H>
-    where H: Read + AsRawFd + Clone
+where
+    H: Read + AsRawFd + Clone,
 {
     fn clone(&self) -> TimeoutReader<H> {
-        TimeoutReader { handle: self.handle.clone(), ..*self }
+        TimeoutReader {
+            handle: self.handle.clone(),
+            ..*self
+        }
     }
 }
 
 impl<H> TimeoutReader<H>
-    where H: Read + AsRawFd
+where
+    H: Read + AsRawFd,
 {
     /// Create a new `TimeoutReader` with an optional timeout.
     ///
@@ -100,13 +108,15 @@ impl<H> TimeoutReader<H>
 }
 
 pub trait TimeoutReadExt<H>
-    where H: Read + AsRawFd
+where
+    H: Read + AsRawFd,
 {
     fn with_timeout<T: Into<Option<Duration>>>(self, timeout: T) -> TimeoutReader<H>;
 }
 
 impl<H> TimeoutReadExt<H> for H
-    where H: Read + AsRawFd
+where
+    H: Read + AsRawFd,
 {
     fn with_timeout<T: Into<Option<Duration>>>(self, timeout: T) -> TimeoutReader<H> {
         TimeoutReader::new(self, timeout)
@@ -125,11 +135,16 @@ mod tests {
 
     lazy_static! {
         static ref CRATE_ROOT: PathBuf = {
-            env::current_exe().unwrap()
-                .parent().unwrap()
-                .parent().unwrap()
-                .parent().unwrap()
-                .parent().unwrap()
+            env::current_exe()
+                .unwrap()
+                .parent()
+                .unwrap()
+                .parent()
+                .unwrap()
+                .parent()
+                .unwrap()
+                .parent()
+                .unwrap()
                 .to_path_buf()
         };
     }

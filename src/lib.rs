@@ -85,7 +85,7 @@ extern crate nix;
 mod utils;
 
 pub mod reader;
-pub use reader::{TimeoutReader, TimeoutReadExt};
+pub use reader::{TimeoutReadExt, TimeoutReader};
 
 pub mod writer;
-pub use writer::{TimeoutWriter, TimeoutWriteExt};
+pub use writer::{TimeoutWriteExt, TimeoutWriter};
