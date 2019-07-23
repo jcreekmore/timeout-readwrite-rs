@@ -7,7 +7,7 @@
 // except according to those terms.
 
 use nix::libc::c_int;
-use nix::poll::EventFlags;
+use nix::poll::PollFlags;
 use std::io::Result;
 use std::io::Seek;
 use std::io::SeekFrom;
@@ -40,12 +40,12 @@ where
     H: Write + AsRawFd,
 {
     fn write(&mut self, buf: &[u8]) -> Result<usize> {
-        utils::wait_until_ready(self.timeout, &self.handle, EventFlags::POLLOUT)?;
+        utils::wait_until_ready(self.timeout, &self.handle, PollFlags::POLLOUT)?;
         self.handle.write(buf)
     }
 
     fn flush(&mut self) -> Result<()> {
-        utils::wait_until_ready(self.timeout, &self.handle, EventFlags::POLLOUT)?;
+        utils::wait_until_ready(self.timeout, &self.handle, PollFlags::POLLOUT)?;
         self.handle.flush()
     }
 }

@@ -29,7 +29,7 @@ pub fn duration_to_ms(duration: Duration) -> c_int {
 pub fn wait_until_ready<R: AsRawFd>(
     timeout: Option<c_int>,
     to_fd: &R,
-    events: poll::EventFlags,
+    events: poll::PollFlags,
 ) -> Result<()> {
     if let Some(timeout) = timeout {
         let mut pfd = poll::PollFd::new(to_fd.as_raw_fd(), events);
