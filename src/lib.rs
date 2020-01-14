@@ -82,7 +82,12 @@
 extern crate lazy_static;
 extern crate nix;
 
+mod reader_mut;
 mod utils;
+mod writer_mut;
+
+pub use self::reader_mut::{TimeoutReadMutExt, TimeoutReaderMut};
+pub use self::writer_mut::{TimeoutWriteMutExt, TimeoutWriterMut};
 
 pub mod reader;
 pub use reader::{TimeoutReadExt, TimeoutReader};
