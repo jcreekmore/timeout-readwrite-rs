@@ -110,14 +110,14 @@ pub trait TimeoutReadMutExt<H>
 where
     H: Read + AsRawFd,
 {
-    fn with_timeout<T: Into<Option<Duration>>>(&mut self, timeout: T) -> TimeoutReaderMut<H>;
+    fn with_timeout_mut<T: Into<Option<Duration>>>(&mut self, timeout: T) -> TimeoutReaderMut<H>;
 }
 
 impl<H> TimeoutReadMutExt<H> for H
 where
     H: Read + AsRawFd,
 {
-    fn with_timeout<T: Into<Option<Duration>>>(&mut self, timeout: T) -> TimeoutReaderMut<H> {
+    fn with_timeout_mut<T: Into<Option<Duration>>>(&mut self, timeout: T) -> TimeoutReaderMut<H> {
         TimeoutReaderMut::new(self, timeout)
     }
 }

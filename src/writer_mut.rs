@@ -115,14 +115,14 @@ pub trait TimeoutWriteMutExt<H>
 where
     H: Write + AsRawFd,
 {
-    fn with_timeout<T: Into<Option<Duration>>>(&mut self, timeout: T) -> TimeoutWriterMut<H>;
+    fn with_timeout_mut<T: Into<Option<Duration>>>(&mut self, timeout: T) -> TimeoutWriterMut<H>;
 }
 
 impl<H> TimeoutWriteMutExt<H> for H
 where
     H: Write + AsRawFd,
 {
-    fn with_timeout<T: Into<Option<Duration>>>(&mut self, timeout: T) -> TimeoutWriterMut<H> {
+    fn with_timeout_mut<T: Into<Option<Duration>>>(&mut self, timeout: T) -> TimeoutWriterMut<H> {
         TimeoutWriterMut::new(self, timeout)
     }
 }
