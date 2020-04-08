@@ -6,6 +6,10 @@ rust:
   - beta
   - stable
   - 1.36.0 # currently oldest supported version
+os:
+  - linux
+  - windows
+  - osx
 script:
   - cargo build --verbose
   - cargo test --verbose
