@@ -86,6 +86,16 @@ where
     }
 }
 
+#[cfg(windows)]
+impl<H> AsRawHandle for TimeoutReader<H>
+where
+    H: Read + AsRawHandle,
+{
+    fn as_raw_handle(&self) -> ::std::os::windows::io::RawHandle {
+        self.handle.as_raw_handle()
+    }
+}
+
 impl<H> Clone for TimeoutReader<H>
 where
     H: Clone,

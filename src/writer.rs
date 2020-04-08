@@ -101,6 +101,16 @@ where
     }
 }
 
+#[cfg(windows)]
+impl<H> AsRawHandle for TimeoutWriter<H>
+where
+    H: Write + AsRawHandle,
+{
+    fn as_raw_handle(&self) -> ::std::os::windows::io::RawHandle {
+        self.handle.as_raw_handle()
+    }
+}
+
 impl<H> Clone for TimeoutWriter<H>
 where
     H: Clone,
