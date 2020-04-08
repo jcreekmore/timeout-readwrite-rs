@@ -14,10 +14,13 @@ use std::io::SeekFrom;
 use std::io::Write;
 #[cfg(unix)]
 use std::os::unix::io::AsRawFd;
+#[cfg(windows)]
+use std::os::windows::io::AsRawHandle;
 use std::os::raw::c_int;
 use std::time::Duration;
+#[cfg(windows)]
+use winapi::um;
 
-#[cfg(unix)]
 use super::utils;
 
 /// The `TimeoutWriter` struct adds write timeouts to any writer.
@@ -51,10 +54,37 @@ where
     }
 }
 
-#[cfg(unix)]
+#[cfg(windows)]
+impl<H> Write for TimeoutWriter<H>
+where
+    H: Write + AsRawHandle,
+{
+    fn write(&mut self, buf: &[u8]) -> Result<usize> {
+        if let Some(timeout) = self.timeout {
+            let handle = self.handle.as_raw_handle();
+            let mut timeouts = unsafe { ::std::mem::zeroed::<um::winbase::COMMTIMEOUTS>() };
+            timeouts.WriteTotalTimeoutConstant = timeout as u32;
+
+            unsafe { um::commapi::SetCommTimeouts(handle, &mut timeouts) };
+        }
+        self.handle.write(buf)
+    }
+
+    fn flush(&mut self) -> Result<()> {
+        if let Some(timeout) = self.timeout {
+            let handle = self.handle.as_raw_handle();
+            let mut timeouts = unsafe { ::std::mem::zeroed::<um::winbase::COMMTIMEOUTS>() };
+            timeouts.WriteTotalTimeoutConstant = timeout as u32;
+
+            unsafe { um::commapi::SetCommTimeouts(handle, &mut timeouts) };
+        }
+        self.handle.flush()
+    }
+}
+
 impl<H> Seek for TimeoutWriter<H>
 where
-    H: Write + AsRawFd + Seek,
+    H: Seek,
 {
     fn seek(&mut self, pos: SeekFrom) -> Result<u64> {
         self.handle.seek(pos)
@@ -71,10 +101,9 @@ where
     }
 }
 
-#[cfg(unix)]
 impl<H> Clone for TimeoutWriter<H>
 where
-    H: Write + AsRawFd + Clone,
+    H: Clone,
 {
     fn clone(&self) -> TimeoutWriter<H> {
         TimeoutWriter {
@@ -84,10 +113,9 @@ where
     }
 }
 
-#[cfg(unix)]
 impl<H> TimeoutWriter<H>
 where
-    H: Write + AsRawFd,
+    H: Write,
 {
     /// Create a new `TimeoutWriter` with an optional timeout.
     ///
@@ -132,10 +160,9 @@ pub trait TimeoutWriteExt<H> {
     fn with_timeout<T: Into<Option<Duration>>>(self, timeout: T) -> TimeoutWriter<H>;
 }
 
-#[cfg(unix)]
 impl<H> TimeoutWriteExt<H> for H
 where
-    H: Write + AsRawFd,
+    H: Write,
 {
     fn with_timeout<T: Into<Option<Duration>>>(self, timeout: T) -> TimeoutWriter<H> {
         TimeoutWriter::new(self, timeout)

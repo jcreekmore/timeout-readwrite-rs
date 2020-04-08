@@ -9,10 +9,12 @@
 #[cfg(unix)]
 use nix::poll;
 use std::cmp;
+#[cfg(unix)]
 use std::io::{Error, ErrorKind, Result};
 use std::os::raw::c_int;
 #[cfg(unix)]
 use std::os::unix::io::AsRawFd;
+#[cfg(unix)]
 use std::slice;
 use std::time::Duration;
 
