@@ -27,10 +27,7 @@ use super::utils;
 /// an `io::ErrorKind::TimedOut` variant as the value of `io::Error`. All other
 /// error values that would normally be produced by the underlying implementation
 /// of the `Read` trait could also be produced by the `TimeoutReader`.
-pub struct TimeoutReader<H>
-where
-    H: Read + AsRawFd,
-{
+pub struct TimeoutReader<H> {
     timeout: Option<c_int>,
     handle: H,
 }

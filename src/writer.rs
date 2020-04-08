@@ -27,10 +27,7 @@ use super::utils;
 /// an `io::ErrorKind::TimedOut` variant as the value of `io::Error`. All other
 /// error values that would normally be produced by the underlying implementation
 /// of the `Write` trait could also be produced by the `TimeoutWriter`.
-pub struct TimeoutWriter<H>
-where
-    H: Write + AsRawFd,
-{
+pub struct TimeoutWriter<H> {
     timeout: Option<c_int>,
     handle: H,
 }
