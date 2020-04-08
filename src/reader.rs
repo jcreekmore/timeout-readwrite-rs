@@ -6,15 +6,18 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use nix::libc::c_int;
+#[cfg(unix)]
 use nix::poll::PollFlags;
 use std::io::Read;
 use std::io::Result;
 use std::io::Seek;
 use std::io::SeekFrom;
+#[cfg(unix)]
 use std::os::unix::io::AsRawFd;
+use std::os::raw::c_int;
 use std::time::Duration;
 
+#[cfg(unix)]
 use super::utils;
 
 /// The `TimeoutReader` struct adds read timeouts to any reader.
@@ -32,6 +35,7 @@ pub struct TimeoutReader<H> {
     handle: H,
 }
 
+#[cfg(unix)]
 impl<H> Read for TimeoutReader<H>
 where
     H: Read + AsRawFd,
@@ -42,6 +46,7 @@ where
     }
 }
 
+#[cfg(unix)]
 impl<H> Seek for TimeoutReader<H>
 where
     H: Read + AsRawFd + Seek,
@@ -51,6 +56,7 @@ where
     }
 }
 
+#[cfg(unix)]
 impl<H> AsRawFd for TimeoutReader<H>
 where
     H: Read + AsRawFd,
@@ -60,6 +66,7 @@ where
     }
 }
 
+#[cfg(unix)]
 impl<H> Clone for TimeoutReader<H>
 where
     H: Read + AsRawFd + Clone,
@@ -72,6 +79,7 @@ where
     }
 }
 
+#[cfg(unix)]
 impl<H> TimeoutReader<H>
 where
     H: Read + AsRawFd,
@@ -115,13 +123,11 @@ where
     }
 }
 
-pub trait TimeoutReadExt<H>
-where
-    H: Read + AsRawFd,
-{
+pub trait TimeoutReadExt<H> {
     fn with_timeout<T: Into<Option<Duration>>>(self, timeout: T) -> TimeoutReader<H>;
 }
 
+#[cfg(unix)]
 impl<H> TimeoutReadExt<H> for H
 where
     H: Read + AsRawFd,

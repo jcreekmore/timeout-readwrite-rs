@@ -23,7 +23,7 @@ repository = "jcreekmore/timeout-readwrite-rs"
 nix = "0.17.0"
 
 [target.'cfg(windows)'.dependencies]
-winapi = "0.3"
+winapi = { version = "0.3.8", features = ["commapi", "std"] }
 
 [dev-dependencies]
 lazy_static = "1.3.0"

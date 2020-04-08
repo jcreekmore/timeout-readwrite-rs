@@ -6,8 +6,6 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#![cfg(unix)]
-
 //! Provides `TimeoutReader` and `TimeoutWriter` structs to time out reads and
 //! writes, respectively. `TimeoutReader` implements `Read` and `TimeoutWriter`
 //! implements `Write`. If any operation times out, the method called will return
@@ -80,8 +78,14 @@
 #[cfg(test)]
 #[macro_use]
 extern crate lazy_static;
+
+#[cfg(unix)]
 extern crate nix;
 
+#[cfg(windows)]
+extern crate winapi;
+
+#[cfg(unix)]
 mod utils;
 
 pub mod reader;

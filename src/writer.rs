@@ -6,15 +6,18 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use nix::libc::c_int;
+#[cfg(unix)]
 use nix::poll::PollFlags;
 use std::io::Result;
 use std::io::Seek;
 use std::io::SeekFrom;
 use std::io::Write;
+#[cfg(unix)]
 use std::os::unix::io::AsRawFd;
+use std::os::raw::c_int;
 use std::time::Duration;
 
+#[cfg(unix)]
 use super::utils;
 
 /// The `TimeoutWriter` struct adds write timeouts to any writer.
@@ -32,6 +35,7 @@ pub struct TimeoutWriter<H> {
     handle: H,
 }
 
+#[cfg(unix)]
 impl<H> Write for TimeoutWriter<H>
 where
     H: Write + AsRawFd,
@@ -47,6 +51,7 @@ where
     }
 }
 
+#[cfg(unix)]
 impl<H> Seek for TimeoutWriter<H>
 where
     H: Write + AsRawFd + Seek,
@@ -56,6 +61,7 @@ where
     }
 }
 
+#[cfg(unix)]
 impl<H> AsRawFd for TimeoutWriter<H>
 where
     H: Write + AsRawFd,
@@ -65,6 +71,7 @@ where
     }
 }
 
+#[cfg(unix)]
 impl<H> Clone for TimeoutWriter<H>
 where
     H: Write + AsRawFd + Clone,
@@ -77,6 +84,7 @@ where
     }
 }
 
+#[cfg(unix)]
 impl<H> TimeoutWriter<H>
 where
     H: Write + AsRawFd,
@@ -120,13 +128,11 @@ where
     }
 }
 
-pub trait TimeoutWriteExt<H>
-where
-    H: Write + AsRawFd,
-{
+pub trait TimeoutWriteExt<H> {
     fn with_timeout<T: Into<Option<Duration>>>(self, timeout: T) -> TimeoutWriter<H>;
 }
 
+#[cfg(unix)]
 impl<H> TimeoutWriteExt<H> for H
 where
     H: Write + AsRawFd,
