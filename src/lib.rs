@@ -85,7 +85,6 @@ extern crate nix;
 #[cfg(windows)]
 extern crate winapi;
 
-#[cfg(unix)]
 mod utils;
 
 pub mod reader;

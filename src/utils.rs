@@ -6,12 +6,12 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#![cfg(unix)]
-
-use nix::libc::c_int;
+#[cfg(unix)]
 use nix::poll;
 use std::cmp;
 use std::io::{Error, ErrorKind, Result};
+use std::os::raw::c_int;
+#[cfg(unix)]
 use std::os::unix::io::AsRawFd;
 use std::slice;
 use std::time::Duration;
@@ -26,6 +26,7 @@ pub fn duration_to_ms(duration: Duration) -> c_int {
     secs.saturating_mul(1_000).saturating_add(nanos / 1_000_000)
 }
 
+#[cfg(unix)]
 /// Wait until `to_fd` receives the poll event from `events`, up to `timeout` length
 /// of time.
 pub fn wait_until_ready<R: AsRawFd>(

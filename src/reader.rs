@@ -14,10 +14,13 @@ use std::io::Seek;
 use std::io::SeekFrom;
 #[cfg(unix)]
 use std::os::unix::io::AsRawFd;
+#[cfg(windows)]
+use std::os::windows::io::AsRawHandle;
 use std::os::raw::c_int;
 use std::time::Duration;
+#[cfg(windows)]
+use winapi::um;
 
-#[cfg(unix)]
 use super::utils;
 
 /// The `TimeoutReader` struct adds read timeouts to any reader.
@@ -41,15 +44,32 @@ where
     H: Read + AsRawFd,
 {
     fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
-        utils::wait_until_ready(self.timeout, &self.handle, PollFlags::POLLIN)?;
+        utils::wait_until_ready(self.timeout,
+            &self.handle, PollFlags::POLLIN)?;
         self.handle.read(buf)
     }
 }
 
-#[cfg(unix)]
+#[cfg(windows)]
+impl<H> Read for TimeoutReader<H>
+where
+    H: Read + AsRawHandle,
+{
+    fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
+        if let Some(timeout) = self.timeout {
+            let handle = self.handle.as_raw_handle();
+            let mut timeouts = unsafe { ::std::mem::zeroed::<um::winbase::COMMTIMEOUTS>() };
+            timeouts.ReadTotalTimeoutConstant = timeout as u32;
+
+            unsafe { um::commapi::SetCommTimeouts(handle, &mut timeouts) };
+        }
+        self.handle.read(buf)
+    }
+}
+
 impl<H> Seek for TimeoutReader<H>
 where
-    H: Read + AsRawFd + Seek,
+    H: Seek,
 {
     fn seek(&mut self, pos: SeekFrom) -> Result<u64> {
         self.handle.seek(pos)
@@ -66,10 +86,9 @@ where
     }
 }
 
-#[cfg(unix)]
 impl<H> Clone for TimeoutReader<H>
 where
-    H: Read + AsRawFd + Clone,
+    H: Clone,
 {
     fn clone(&self) -> TimeoutReader<H> {
         TimeoutReader {
@@ -79,10 +98,9 @@ where
     }
 }
 
-#[cfg(unix)]
 impl<H> TimeoutReader<H>
 where
-    H: Read + AsRawFd,
+    H: Read,
 {
     /// Create a new `TimeoutReader` with an optional timeout.
     ///
@@ -127,10 +145,9 @@ pub trait TimeoutReadExt<H> {
     fn with_timeout<T: Into<Option<Duration>>>(self, timeout: T) -> TimeoutReader<H>;
 }
 
-#[cfg(unix)]
 impl<H> TimeoutReadExt<H> for H
 where
-    H: Read + AsRawFd,
+    H: Read
 {
     fn with_timeout<T: Into<Option<Duration>>>(self, timeout: T) -> TimeoutReader<H> {
         TimeoutReader::new(self, timeout)
@@ -172,15 +189,12 @@ mod tests {
         regular_file.push("regular_file.txt");
 
         let fp = File::open(regular_file).unwrap();
-        let fp_fd = fp.as_raw_fd();
         let mut fp = TimeoutReader::new(fp, Duration::new(5, 0));
 
         let mut read_contents = String::new();
         fp.read_to_string(&mut read_contents).unwrap();
 
         assert_eq!(original_contents, read_contents);
-
-        assert_eq!(fp_fd, fp.as_raw_fd());
     }
 
     #[test]
