@@ -240,4 +240,41 @@ mod tests {
 
         assert_eq!(original_contents, read_contents);
     }
+
+    #[test]
+    fn read_tcp_read_with_timeout_extension_trait() {
+        use std::net::{TcpListener, TcpStream};
+        use std::thread::spawn;
+        use std::sync::{Arc, Barrier};
+
+        const ADDR: &str = "127.0.0.1:8080";
+
+        let bind_done = Arc::new(Barrier::new(2));
+        let wait_bind_done = bind_done.clone();
+
+        let timeout_done = Arc::new(Barrier::new(2));
+        let wait_timeout_done = timeout_done.clone();
+
+        let _h = spawn(move || {
+            let listener = TcpListener::bind(ADDR).unwrap();
+            bind_done.wait();
+            let _stream = listener.accept().unwrap();
+            wait_timeout_done.wait();
+        });
+
+        wait_bind_done.wait();
+
+        let fp = TcpStream::connect(ADDR).unwrap();
+        let mut fp = fp.with_timeout(Duration::new(5, 0));
+
+        let mut read_contents = String::new();
+        let value = fp.read_to_string(&mut read_contents); 
+        timeout_done.wait();
+
+        if let Err(e) = value {
+            assert_eq!(e.kind(), ::std::io::ErrorKind::TimedOut);
+        } else {
+            assert!(false);
+        }
+    }
 }
