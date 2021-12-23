@@ -72,7 +72,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-timeout-readwrite = "0.1"
+timeout-readwrite = "0.3.1"
 ```
 
 and this to your crate root:
