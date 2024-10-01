@@ -12,7 +12,8 @@ use std::io::Result;
 use std::io::Seek;
 use std::io::SeekFrom;
 use std::io::Write;
-use std::os::unix::io::AsRawFd;
+use std::os::fd::AsFd;
+use std::os::fd::BorrowedFd;
 use std::time::Duration;
 
 use super::utils;
@@ -29,7 +30,7 @@ use super::utils;
 /// of the `Write` trait could also be produced by the `TimeoutWriter`.
 pub struct TimeoutWriter<H>
 where
-    H: Write + AsRawFd,
+    H: Write + AsFd,
 {
     timeout: Option<c_int>,
     handle: H,
@@ -37,7 +38,7 @@ where
 
 impl<H> Write for TimeoutWriter<H>
 where
-    H: Write + AsRawFd,
+    H: Write + AsFd,
 {
     fn write(&mut self, buf: &[u8]) -> Result<usize> {
         utils::wait_until_ready(self.timeout, &self.handle, PollFlags::POLLOUT)?;
@@ -52,25 +53,25 @@ where
 
 impl<H> Seek for TimeoutWriter<H>
 where
-    H: Write + AsRawFd + Seek,
+    H: Write + AsFd + Seek,
 {
     fn seek(&mut self, pos: SeekFrom) -> Result<u64> {
         self.handle.seek(pos)
     }
 }
 
-impl<H> AsRawFd for TimeoutWriter<H>
+impl<H> AsFd for TimeoutWriter<H>
 where
-    H: Write + AsRawFd,
+    H: Write + AsFd,
 {
-    fn as_raw_fd(&self) -> c_int {
-        self.handle.as_raw_fd()
+    fn as_fd(&self) -> BorrowedFd<'_> {
+        self.handle.as_fd()
     }
 }
 
 impl<H> Clone for TimeoutWriter<H>
 where
-    H: Write + AsRawFd + Clone,
+    H: Write + AsFd + Clone,
 {
     fn clone(&self) -> TimeoutWriter<H> {
         TimeoutWriter {
@@ -82,7 +83,7 @@ where
 
 impl<H> TimeoutWriter<H>
 where
-    H: Write + AsRawFd,
+    H: Write + AsFd,
 {
     /// Create a new `TimeoutWriter` with an optional timeout.
     ///
@@ -118,21 +119,21 @@ where
     pub fn new<T: Into<Option<Duration>>>(handle: H, timeout: T) -> TimeoutWriter<H> {
         TimeoutWriter {
             timeout: timeout.into().map(utils::duration_to_ms),
-            handle: handle,
+            handle,
         }
     }
 }
 
 pub trait TimeoutWriteExt<H>
 where
-    H: Write + AsRawFd,
+    H: Write + AsFd,
 {
     fn with_timeout<T: Into<Option<Duration>>>(self, timeout: T) -> TimeoutWriter<H>;
 }
 
 impl<H> TimeoutWriteExt<H> for H
 where
-    H: Write + AsRawFd,
+    H: Write + AsFd,
 {
     fn with_timeout<T: Into<Option<Duration>>>(self, timeout: T) -> TimeoutWriter<H> {
         TimeoutWriter::new(self, timeout)

@@ -12,7 +12,7 @@ use std::io::Read;
 use std::io::Result;
 use std::io::Seek;
 use std::io::SeekFrom;
-use std::os::unix::io::AsRawFd;
+use std::os::fd::AsFd;
 use std::time::Duration;
 
 use super::utils;
@@ -29,7 +29,7 @@ use super::utils;
 /// of the `Read` trait could also be produced by the `TimeoutReader`.
 pub struct TimeoutReader<H>
 where
-    H: Read + AsRawFd,
+    H: Read + AsFd,
 {
     timeout: Option<c_int>,
     handle: H,
@@ -37,7 +37,7 @@ where
 
 impl<H> Read for TimeoutReader<H>
 where
-    H: Read + AsRawFd,
+    H: Read + AsFd,
 {
     fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
         utils::wait_until_ready(self.timeout, &self.handle, PollFlags::POLLIN)?;
@@ -47,25 +47,25 @@ where
 
 impl<H> Seek for TimeoutReader<H>
 where
-    H: Read + AsRawFd + Seek,
+    H: Read + AsFd + Seek,
 {
     fn seek(&mut self, pos: SeekFrom) -> Result<u64> {
         self.handle.seek(pos)
     }
 }
 
-impl<H> AsRawFd for TimeoutReader<H>
+impl<H> AsFd for TimeoutReader<H>
 where
-    H: Read + AsRawFd,
+    H: Read + AsFd,
 {
-    fn as_raw_fd(&self) -> c_int {
-        self.handle.as_raw_fd()
+    fn as_fd(&self) -> std::os::unix::prelude::BorrowedFd<'_> {
+        self.handle.as_fd()
     }
 }
 
 impl<H> Clone for TimeoutReader<H>
 where
-    H: Read + AsRawFd + Clone,
+    H: Read + AsFd + Clone,
 {
     fn clone(&self) -> TimeoutReader<H> {
         TimeoutReader {
@@ -77,7 +77,7 @@ where
 
 impl<H> TimeoutReader<H>
 where
-    H: Read + AsRawFd,
+    H: Read + AsFd,
 {
     /// Create a new `TimeoutReader` with an optional timeout.
     ///
@@ -113,21 +113,21 @@ where
     pub fn new<T: Into<Option<Duration>>>(handle: H, timeout: T) -> TimeoutReader<H> {
         TimeoutReader {
             timeout: timeout.into().map(utils::duration_to_ms),
-            handle: handle,
+            handle,
         }
     }
 }
 
 pub trait TimeoutReadExt<H>
 where
-    H: Read + AsRawFd,
+    H: Read + AsFd,
 {
     fn with_timeout<T: Into<Option<Duration>>>(self, timeout: T) -> TimeoutReader<H>;
 }
 
 impl<H> TimeoutReadExt<H> for H
 where
-    H: Read + AsRawFd,
+    H: Read + AsFd,
 {
     fn with_timeout<T: Into<Option<Duration>>>(self, timeout: T) -> TimeoutReader<H> {
         TimeoutReader::new(self, timeout)
@@ -139,6 +139,7 @@ mod tests {
     use std::env;
     use std::fs::File;
     use std::io::Read;
+    use std::os::fd::AsRawFd;
     use std::path::PathBuf;
     use std::time::Duration;
 
@@ -177,7 +178,7 @@ mod tests {
 
         assert_eq!(original_contents, read_contents);
 
-        assert_eq!(fp_fd, fp.as_raw_fd());
+        assert_eq!(fp_fd, fp.as_fd().as_raw_fd());
     }
 
     #[test]
