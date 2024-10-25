@@ -9,8 +9,9 @@
 use nix::libc::c_int;
 use nix::poll;
 use std::cmp;
+use std::convert::TryFrom;
 use std::io::{Error, ErrorKind, Result};
-use std::os::unix::io::AsRawFd;
+use std::os::fd::AsFd;
 use std::slice;
 use std::time::Duration;
 
@@ -18,7 +19,7 @@ use std::time::Duration;
 /// If the duration exceeds the number of milliseconds that can fit into a c_int,
 /// saturate the time to the max_value of c_int.
 pub fn duration_to_ms(duration: Duration) -> c_int {
-    let secs = cmp::min(duration.as_secs(), c_int::max_value() as u64) as c_int;
+    let secs = cmp::min(duration.as_secs(), c_int::MAX as u64) as c_int;
     let nanos = duration.subsec_nanos() as c_int;
 
     secs.saturating_mul(1_000).saturating_add(nanos / 1_000_000)
@@ -26,16 +27,19 @@ pub fn duration_to_ms(duration: Duration) -> c_int {
 
 /// Wait until `to_fd` receives the poll event from `events`, up to `timeout` length
 /// of time.
-pub fn wait_until_ready<R: AsRawFd>(
+pub fn wait_until_ready(
     timeout: Option<c_int>,
-    to_fd: &R,
+    fd: &impl AsFd,
     events: poll::PollFlags,
 ) -> Result<()> {
     if let Some(timeout) = timeout {
-        let mut pfd = poll::PollFd::new(to_fd.as_raw_fd(), events);
-        let mut s = unsafe { slice::from_raw_parts_mut(&mut pfd, 1) };
+        let mut pfd = poll::PollFd::new(fd.as_fd(), events);
+        let s = slice::from_mut(&mut pfd);
 
-        let retval = poll::poll(&mut s, timeout).map_err(|e| Error::new(ErrorKind::Other, e))?;
+        let timeout =
+            poll::PollTimeout::try_from(timeout).map_err(|e| Error::new(ErrorKind::Other, e))?;
+
+        let retval = poll::poll(s, timeout).map_err(|e| Error::new(ErrorKind::Other, e))?;
         if retval == 0 {
             return Err(Error::new(
                 ErrorKind::TimedOut,
